@@ -90,16 +90,15 @@ List all non-countries.
 ## Once you figure it out, write a query to list all the non-countries
 ## (skills: select, where)
 
-run_sql_and_return_html(cnx,"""
-select 
- `Long name`,  `Region`
-
-from 
-  world_bank_data.wdi_country 
-
-  where region is NULL
-
+run_sql_and_return_html(cnx, """
+SELECT 
+    `Short Name`
+FROM 
+    world_bank_data.wdi_country
+WHERE 
+    `Region` IS NULL;
 """)
+
 ```
 
 ## Task 4
