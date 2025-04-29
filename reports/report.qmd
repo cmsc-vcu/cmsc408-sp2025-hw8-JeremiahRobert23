@@ -511,35 +511,31 @@ ORDER BY
 ## slam dunk after this!
 ## (skills: select, where, subqueries, joins, aggregate functions)
 
-run_sql_and_return_html(cnx, """
+run_sql_and_return_html(cnx,"""
 WITH region_income_counts AS (
-    SELECT 
-        `Region`,
-        `Income Group`,
-        COUNT(*) AS pair_cnt,
-        SUM(COUNT(*)) OVER(PARTITION BY `Region`) AS region_cnt,
-        SUM(COUNT(*)) OVER(PARTITION BY `Income Group`) AS income_cnt,
-        COUNT(*) OVER() AS total_cnt
-    FROM 
-        wdi_country
-    GROUP BY 
-        `Region`, `Income Group`
+  SELECT 
+    `Region`, 
+    `Income Group`, 
+    COUNT(*) AS country_count
+  FROM 
+    wdi_country
+  GROUP BY 
+    `Region`, `Income Group`
+), total_counts AS (
+  SELECT COUNT(*) AS total_countries FROM wdi_country
 )
-
 SELECT 
-    `Region`,
-    `Income Group`,
-    pair_cnt,
-    region_cnt,
-    income_cnt,
-    total_cnt,
-    ROUND((pair_cnt / total_cnt) * 100, 2) AS `Pct of Total`
+  region_income_counts.`Region`,
+  region_income_counts.`Income Group`,
+  region_income_counts.country_count,
+  total_counts.total_countries,
+  ROUND((region_income_counts.country_count / total_counts.total_countries) * 100, 2) AS "Percentage of Total"
 FROM 
-    region_income_counts
+  region_income_counts, total_counts
 ORDER BY 
-    `Region`, `Income Group`;
-
+  region_income_counts.`Region`, region_income_counts.`Income Group`;
 """)
+
 
 
 
@@ -554,8 +550,34 @@ ORDER BY
 ## columns, Region in the rows and Percent of total in each cell of the table.
 
 run_sql_and_return_html(cnx,"""
-select "doh!" as "Homer says ..." from dual
+WITH region_income_counts AS (
+  SELECT 
+    `Region`, 
+    `Income Group`, 
+    COUNT(*) AS country_count
+  FROM 
+    wdi_country
+  GROUP BY 
+    `Region`, `Income Group`
+), total_counts AS (
+  SELECT COUNT(*) AS total_countries FROM wdi_country
+)
+SELECT 
+  region_income_counts.`Region`,
+  SUM(CASE WHEN region_income_counts.`Income Group` = 'High income' THEN 1 ELSE 0 END) AS "High Income",
+  SUM(CASE WHEN region_income_counts.`Income Group` = 'Upper middle income' THEN 1 ELSE 0 END) AS "Upper Middle Income",
+  SUM(CASE WHEN region_income_counts.`Income Group` = 'Lower middle income' THEN 1 ELSE 0 END) AS "Lower Middle Income",
+  SUM(CASE WHEN region_income_counts.`Income Group` = 'Low income' THEN 1 ELSE 0 END) AS "Low Income",
+  SUM(CASE WHEN region_income_counts.`Income Group` IS NULL THEN 1 ELSE 0 END) AS "No Income Group",
+  ROUND((SUM(region_income_counts.country_count) / (SELECT total_countries FROM total_counts)) * 100, 2) AS "Percent of Total"
+FROM 
+  region_income_counts, total_counts
+GROUP BY 
+  region_income_counts.`Region`
+ORDER BY 
+  region_income_counts.`Region`;
 """)
+
 
 ```
 
@@ -569,7 +591,17 @@ select "doh!" as "Homer says ..." from dual
 ## (This is much simpler than task 20!)
 
 run_sql_and_return_html(cnx,"""
-select "doh!" as "Homer says ..." from dual
+SELECT 
+  `Income Group`, 
+  COUNT(*) AS "Number of Countries", 
+  ROUND((COUNT(*) / (SELECT COUNT(*) FROM wdi_country)) * 100, 1) AS "Percentage of Total"
+FROM 
+  wdi_country
+GROUP BY 
+  `Income Group`
+ORDER BY 
+  `Income Group`;
+
 """)
 
 ```
